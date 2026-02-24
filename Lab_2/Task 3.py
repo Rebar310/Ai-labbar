@@ -36,8 +36,10 @@ def cost_function_gd(X, y, weights):
 # Adam
 def Adam (X, y, init_weights, iterations):
     weights = init_weights.copy()
-    beta1, beta2 = 0.2, 0.2
-    epsilon = 1e-8
+    # beta1, beta2 = 0.2, 0.2 (original values)
+    beta1, beta2 = 0.9, 0.99 # from slides
+    # epsilon = 1e-8 (original values)
+    epsilon = 0.01 # from slides
     m = np.zeros_like(weights)
     v = np.zeros_like(weights)
     costs = []
@@ -106,6 +108,45 @@ def GradientDescent(X, y, init_weights, iterations):
 
 
 
+# ============== Test ========================
+
+iterations = 20
+
+optimizers = {
+    "optimizer_1 (Adam)": Adam,
+    "optimizer_2 (RMSProp)": RMSProp,
+    "optimizer_3 (Momentum)": Momentum,
+    "optimizer_4 (AdaGrad)": AdaGrad,
+    "optimizer_5 (GD)": GradientDescent,
+}
+
+# Enkelt konvergenskriterium:
+# "konvergerar" om förbättringen blir väldigt liten mot slutet
+epsilon_conv = 0.001 #from slides
+
+print("=== Resultat efter 20 iterationer ===")
+for name, opt in optimizers.items():
+    weights, costs = opt(X, y, init_weights, iterations)
+
+    converged = False
+    converged_at = None
+
+    # leta efter första t där J_{t-1} - J_t <= epsilon
+    for t in range(1, len(costs)):
+        decrease = costs[t-1] - costs[t]
+        if 0 <= decrease <= epsilon_conv:
+            converged = True
+            converged_at = t + 1  # iterationnummer (1-indexat)
+            break
+
+    print(f"{name}")
+    print(f"  start cost: {costs[0]:.6f}")
+    print(f"  end   cost: {costs[-1]:.6f}")
+    if converged:
+        print(f"  converged at iteration: {converged_at} (ε={epsilon_conv})")
+    else:
+        print(f"  not converged within {iterations} iterations (ε={epsilon_conv})")
+    print()
 
 
 
