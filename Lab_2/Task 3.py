@@ -1,11 +1,25 @@
 import numpy as np
+import pickle 
 
 ##### Load the data here #####
 
+data = "Task_3_data.pkl"
+with open(data, "rb") as f:
+    data = pickle.load(f)
 
 ##### Convert the data into numpy arrays here ########
 
+data = np.array(data, dtype=float)
 
+# sista kolumnen = y
+X = data[:, :-1]
+y = data[:, -1]
+
+# antal features (kolumner i X)
+num_features = X.shape[1]
+
+# initiala vikter (måste matcha antal kolumner i X)
+init_weights = np.zeros(num_features)
 
 ########## End of Data preperation ##############
 
@@ -19,8 +33,8 @@ def cost_function_gd(X, y, weights):
     predictions = X @ weights
     return (2 / len(y)) * X.T @ (predictions - y)
 
-
-def optimizer_1(X, y, init_weights, iterations):
+# Adam
+def Adam (X, y, init_weights, iterations):
     weights = init_weights.copy()
     beta1, beta2 = 0.2, 0.2
     epsilon = 1e-8
@@ -37,8 +51,8 @@ def optimizer_1(X, y, init_weights, iterations):
         costs.append(cost_function(X, y, weights))
     return weights, costs
 
-
-def optimizer_2(X, y, init_weights, iterations):
+# RMSProp
+def RMSProp(X, y, init_weights, iterations):
     weights = init_weights.copy()
     epsilon = 1e-8
     decay_rate = 0.1
@@ -52,8 +66,8 @@ def optimizer_2(X, y, init_weights, iterations):
         costs.append(cost_function(X, y, weights))
     return weights, costs
 
-
-def optimizer_3(X, y, init_weights, iterations):
+# Momentum (GD with momentum)
+def Momentum(X, y, init_weights, iterations):
     weights = init_weights.copy()
     v = np.zeros_like(weights)  # Velocity term
     momentum = 0.1
@@ -65,8 +79,8 @@ def optimizer_3(X, y, init_weights, iterations):
         costs.append(cost_function(X, y, weights))
     return weights, costs
 
-
-def optimizer_4(X, y, init_weights, iterations):
+# AdaGrad
+def AdaGrad(X, y, init_weights, iterations):
     weights = init_weights.copy()
     epsilon = 1e-8
     grad_accum = np.zeros_like(weights)
@@ -79,8 +93,8 @@ def optimizer_4(X, y, init_weights, iterations):
         costs.append(cost_function(X, y, weights))
     return weights, costs
 
-
-def optimizer_5(X, y, init_weights, iterations):
+# Vanlig Gradient Descent
+def GradientDescent(X, y, init_weights, iterations):
     weights = init_weights.copy()
     costs = []
     for _ in range(iterations):
