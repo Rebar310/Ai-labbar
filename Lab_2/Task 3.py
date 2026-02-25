@@ -39,7 +39,7 @@ def Adam (X, y, init_weights, iterations):
     # beta1, beta2 = 0.2, 0.2 (original values)
     beta1, beta2 = 0.9, 0.99 # from slides
     # epsilon = 1e-8 (original values)
-    epsilon = 0.01 # from slides
+    epsilon = 1e-2 # from slides
     m = np.zeros_like(weights)
     v = np.zeros_like(weights)
     costs = []
