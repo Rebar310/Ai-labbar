@@ -1,5 +1,6 @@
 import numpy as np # Importerar NumPy för numeriska beräkningar
 import pickle # Importerar pickle för att kunna läsa in sparade Python-objekt
+import matplotlib.pyplot as plt
 
 ##### Load the data here #####
 
@@ -42,12 +43,16 @@ def cost_function_gd(X, y, weights):
 # Adam
 def Adam (X, y, init_weights, iterations):
     weights = init_weights.copy() # Kopierar initialvikter så att originalet inte ändras
+
     #beta1, beta2 = 0.2, 0.2 #(original values)
-    beta1, beta2 = 0.09, 0.09 # from slides
+    beta1, beta2 = 0.09, 0.09 # changed values
+    #beta1, beta2 = 0.9, 0.99 # changed values
+
     epsilon = 1e-8 # Litet tal för att undvika division med 0 (och stabilisera)
     m = np.zeros_like(weights) # Första momentet (running average av gradienten)
     v = np.zeros_like(weights) # Andra momentet (running average av gradient^2)
     costs = []   # Lista för att spara kostnad efter varje iteration
+
     for t in range(1, iterations + 1):
         grad = cost_function_gd(X, y, weights) # Beräknar gradienten för nuvarande weights
         m = beta1 * m + (1 - beta1) * grad # Uppdaterar första momentet m
@@ -65,6 +70,7 @@ def RMSProp(X, y, init_weights, iterations):
     decay_rate = 0.1 # Hur snabbt historiken "glöms" (running average)
     grad_accum = np.zeros_like(weights) # Ackumulator för running average av gradient^2
     costs = [] # Lista för kostnader
+
     for _ in range(iterations): # Kör iterations antal varv
         grad = cost_function_gd(X, y, weights) # Gradient
         grad_accum = decay_rate * grad_accum + (1 - decay_rate) * grad ** 2 # Uppdaterar ackumulerad grad^2
@@ -79,6 +85,7 @@ def Momentum(X, y, init_weights, iterations):
     v = np.zeros_like(weights)  # Velocity term (ackumulerar riktning/hastighet)
     momentum = 0.1 # Momentumfaktor (hur mycket av tidigare v som behålls)
     costs = [] # Lista för kostnader
+
     for _ in range(iterations): # Loopar antal iterationer
         grad = cost_function_gd(X, y, weights) # Beräknar gradient
         v = momentum * v - learning_rate * grad # Uppdaterar velocity (rör sig i riktning mot minskande kostnad)
@@ -92,6 +99,7 @@ def AdaGrad(X, y, init_weights, iterations):
     epsilon = 1e-8 # Stabilitetsterm för division
     grad_accum = np.zeros_like(weights) # Ackumulator för summan av grad^2 över tid
     costs = [] # Lista för kostnader
+
     for _ in range(iterations): # Loopar antal iterationer
         grad = cost_function_gd(X, y, weights) # Gradient
         grad_accum += grad ** 2 # Lägger till grad^2 (växer över tid)
@@ -104,6 +112,7 @@ def AdaGrad(X, y, init_weights, iterations):
 def GradientDescent(X, y, init_weights, iterations):
     weights = init_weights.copy() # Kopierar initialvikter
     costs = [] # Lista för kostnader
+
     for _ in range(iterations): # Loopar antal iterationer
         grad = cost_function_gd(X, y, weights) # Gradient
         weights -= learning_rate * grad # Standard GD-uppdatering
@@ -111,51 +120,71 @@ def GradientDescent(X, y, init_weights, iterations):
     return weights, costs
 
 
-
-
-# ============== Test ========================
-
-iterations = 100 # Antal iterationer att köra varje optimerare
+# ================ Test ( Technique 1) =====================
+iterations = 20 # Antal iterationer att köra varje optimerare
 
 optimizers = { # Dictionary som mappar namn -> funktionsreferens
-    "optimizer_1 (Adam)": Adam,
-    "optimizer_2 (RMSProp)": RMSProp,
+   "optimizer_1 (Adam)": Adam,
+   "optimizer_2 (RMSProp)": RMSProp,
     "optimizer_3 (Momentum)": Momentum,
     "optimizer_4 (AdaGrad)": AdaGrad,
     "optimizer_5 (GD)": GradientDescent,
-}
+ }
 
-# Enkelt konvergenskriterium:
-# "konvergerar" om förbättringen blir väldigt liten mot slutet
-epsilon_conv = 0.001 #from slides
+plt.figure(figsize=(8,6))
 
-print("=== Resultat efter ",iterations," iterationer ===")
-for name, opt in optimizers.items():  # Loopar över varje optimerare (namn och funktion)
-    weights, costs = opt(X, y, init_weights, iterations) # Kör optimeraren och får tillbaka slutvikter + kostnadshistorik
+for name, opt in optimizers.items():
+    weights, costs = opt(X, y, init_weights, iterations)
+    plt.plot(costs, label=name)
 
-    converged = False # Flagga för om den konvergerade
-    converged_at = None # Vid vilken iteration den konvergerade (om den gjorde det)
+plt.xlabel("Iteration")
+plt.ylabel("Cost (MSE)")
+plt.title("Learning Curves for All Optimizers")
+plt.legend()
+plt.grid(True)
+plt.show()
 
-    # leta efter första t där J_{t-1} - J_t <= epsilon
-    for t in range(1, len(costs)):  # Startar vid 1 eftersom vi jämför costs[t-1] med costs[t]
-        decrease = costs[t-1] - costs[t] # Hur mycket kostnaden minskade mellan två iterationer
-        if 0 <= decrease <= epsilon_conv: # Om den minskar men bara pyttelite => anses konvergerat
-            converged = True # Sätt flaggan
-            converged_at = t + 1  # iterationnummer (1-indexat)
-            break
+# ============== Test (Technique 2) ========================
 
+# iterations = 100 # Antal iterationer att köra varje optimerare
 
+# optimizers = { # Dictionary som mappar namn -> funktionsreferens
+#     "optimizer_1 (Adam)": Adam,
+#     "optimizer_2 (RMSProp)": RMSProp,
+#     "optimizer_3 (Momentum)": Momentum,
+#     "optimizer_4 (AdaGrad)": AdaGrad,
+#     "optimizer_5 (GD)": GradientDescent,
+# }
 
-    print(f"{name}")
-    print(f"  start cost: {costs[0]:.6f}")
-    print(f"  end   cost: {costs[-1]:.6f}")
-    if converged:
-        print(f"  converged at iteration: {converged_at} (ε={epsilon_conv})")
-    else:
-        print(f"  not converged within {iterations} iterations (ε={epsilon_conv})")
-    print()
+# # Enkelt konvergenskriterium:
+# # "konvergerar" om förbättringen blir väldigt liten mot slutet
+# epsilon_conv = 0.001 #from slides
 
+# print("=== Resultat efter ",iterations," iterationer ===")
+# for name, opt in optimizers.items():  # Loopar över varje optimerare (namn och funktion)
+#     weights, costs = opt(X, y, init_weights, iterations) # Kör optimeraren och får tillbaka slutvikter + kostnadshistorik
 
+#     converged = False # Flagga för om den konvergerade
+#     converged_at = None # Vid vilken iteration den konvergerade (om den gjorde det)
+
+#     # leta efter första t där J_{t-1} - J_t <= epsilon
+#     for t in range(1, len(costs)):  # Startar vid 1 eftersom vi jämför costs[t-1] med costs[t]
+#         decrease = costs[t-1] - costs[t] # Hur mycket kostnaden minskade mellan två iterationer
+#         if 0 <= decrease <= epsilon_conv: # Om den minskar men bara pyttelite => anses konvergerat
+#             converged = True # Sätt flaggan
+#             converged_at = t + 1  # iterationnummer (1-indexat)
+#             break
+
+#     print(f"{name}")
+#     print(f"  start cost: {costs[0]:.6f}")
+#     print(f"  end   cost: {costs[-1]:.6f}")
+#     if converged:
+#         print(f"  converged at iteration: {converged_at} (ε={epsilon_conv})")
+#     else:
+#         print(f"  not converged within {iterations} iterations (ε={epsilon_conv})")
+#     print()
+
+# =======================================================
 
 
 
