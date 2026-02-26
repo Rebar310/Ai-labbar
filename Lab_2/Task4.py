@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
 
 
 # ---------- 1) Load data ----------
@@ -87,3 +88,24 @@ print(f"{target_name} = {intercept_raw:.6f}", end="")
 for fname, c in zip(feature_names, coef_raw):
     print(f" + ({c:.6f})*{fname}", end="")
 print("\n")
+
+# ---------- 5) Plot learning curve + markera konvergens ----------
+
+iters = np.arange(1, len(costs) + 1)  # 1-indexade iterationer
+
+max_show = 50  # antal iterationer du vill visa
+
+plt.figure(figsize=(9,5))
+plt.plot(iters[:max_show], costs[:max_show], label="MSE (first 50)")
+
+if converged_at is not None and converged_at <= max_show:
+    plt.axvline(converged_at, linestyle="--", label=f"Convergence @ {converged_at}")
+    plt.scatter([converged_at], [costs[converged_at - 1]])
+
+plt.xlabel("Iteration")
+plt.ylabel("Cost (MSE)")
+plt.title("Learning curve (first 50 iterations)")
+plt.grid(True)
+plt.legend()
+plt.show()
+
