@@ -6,7 +6,7 @@
 <img width="815" height="611" alt="image" src="https://github.com/user-attachments/assets/4cd4cee9-d575-4d14-ada4-922c47a7ae82" />
 
 ## Task 2
-<img width="1798" height="1131" alt="image" src="https://github.com/user-attachments/assets/b0ba2535-d942-45a0-b5ec-01428dd6e130" />
+![2c01c6cf-607b-49d3-864f-af95cd8b8c5e](https://github.com/user-attachments/assets/c6f5b050-cc37-4ae5-886e-89e694aa2bec)
 
 ## Task 3 görs i koden
 ## Task 4 görs i koden
