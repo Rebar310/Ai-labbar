@@ -10,3 +10,8 @@
 
 ## Task 3 görs i koden
 ## Task 4 görs i koden
+
+# Lab_3 
+Vad är EU AI Act?
+Artificial Intelligence Act (EU:s AI-förordning) är världens första omfattande lagstiftning som reglerar användningen av artificiell intelligens inom EU.
+Den bygger på en riskbaserad modell. Det betyder att AI-system delas in i olika risknivåer.
