@@ -24,7 +24,8 @@ init_weights = np.zeros(num_features) # Skapar en viktvektor med num_features st
 
 ########## End of Data preperation ##############
 
-learning_rate = 0.3 # Steglängd (hur stora uppdateringar i vikterna varje iteration)
+#learning_rate = 0.3 # Steglängd (hur stora uppdateringar i vikterna varje iteration)
+learning_rate = 2.15
 
 def cost_function(X, y, weights):
     # Beräknar modellens prediktioner med linjär modell: y_hat = X @ weights
@@ -44,8 +45,8 @@ def cost_function_gd(X, y, weights):
 def Adam (X, y, init_weights, iterations):
     weights = init_weights.copy() # Kopierar initialvikter så att originalet inte ändras
 
-    #beta1, beta2 = 0.2, 0.2 #(original values)
-    beta1, beta2 = 0.09, 0.09 # changed values
+    beta1, beta2 = 0.2, 0.2 #(original values)
+    #beta1, beta2 = 0.09, 0.09 # changed values
     #beta1, beta2 = 0.9, 0.99 # changed values
 
     epsilon = 1e-8 # Litet tal för att undvika division med 0 (och stabilisera)
@@ -61,7 +62,7 @@ def Adam (X, y, init_weights, iterations):
         v_hat = v / (1 - beta2) # Bias-korrigering av v
         weights -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon) # Adam-uppdatering av vikter
         costs.append(cost_function(X, y, weights)) # Sparar kostnaden efter uppdateringen
-    return weights, costs
+    return weights, costs 
 
 # RMSProp
 def RMSProp(X, y, init_weights, iterations):
@@ -121,7 +122,7 @@ def GradientDescent(X, y, init_weights, iterations):
 
 
 # ================ Test ( Technique 1) =====================
-iterations = 20 # Antal iterationer att köra varje optimerare
+iterations = 25 # Antal iterationer att köra varje optimerare
 
 optimizers = { # Dictionary som mappar namn -> funktionsreferens
    "optimizer_1 (Adam)": Adam,
@@ -146,18 +147,18 @@ plt.show()
 
 # ============== Test (Technique 2) ========================
 
-# iterations = 100 # Antal iterationer att köra varje optimerare
+# iterations = 50 # Antal iterationer att köra varje optimerare
 
 # optimizers = { # Dictionary som mappar namn -> funktionsreferens
 #     "optimizer_1 (Adam)": Adam,
 #     "optimizer_2 (RMSProp)": RMSProp,
 #     "optimizer_3 (Momentum)": Momentum,
 #     "optimizer_4 (AdaGrad)": AdaGrad,
-#     "optimizer_5 (GD)": GradientDescent,
-# }
+#    "optimizer_5 (GD)": GradientDescent,
+#  }
 
-# # Enkelt konvergenskriterium:
-# # "konvergerar" om förbättringen blir väldigt liten mot slutet
+#  # Enkelt konvergenskriterium:
+# # # "konvergerar" om förbättringen blir väldigt liten mot slutet
 # epsilon_conv = 0.001 #from slides
 
 # print("=== Resultat efter ",iterations," iterationer ===")
@@ -169,19 +170,19 @@ plt.show()
 
 #     # leta efter första t där J_{t-1} - J_t <= epsilon
 #     for t in range(1, len(costs)):  # Startar vid 1 eftersom vi jämför costs[t-1] med costs[t]
-#         decrease = costs[t-1] - costs[t] # Hur mycket kostnaden minskade mellan två iterationer
-#         if 0 <= decrease <= epsilon_conv: # Om den minskar men bara pyttelite => anses konvergerat
-#             converged = True # Sätt flaggan
-#             converged_at = t + 1  # iterationnummer (1-indexat)
-#             break
+#        decrease = costs[t-1] - costs[t] # Hur mycket kostnaden minskade mellan två iterationer
+#        if 0 <= decrease <= epsilon_conv: # Om den minskar men bara pyttelite => anses konvergerat
+#            converged = True # Sätt flaggan
+#            converged_at = t + 1  # iterationnummer (1-indexat)
+#            break
 
 #     print(f"{name}")
 #     print(f"  start cost: {costs[0]:.6f}")
 #     print(f"  end   cost: {costs[-1]:.6f}")
 #     if converged:
-#         print(f"  converged at iteration: {converged_at} (ε={epsilon_conv})")
+#        print(f"  converged at iteration: {converged_at} (ε={epsilon_conv})")
 #     else:
-#         print(f"  not converged within {iterations} iterations (ε={epsilon_conv})")
+#        print(f"  not converged within {iterations} iterations (ε={epsilon_conv})")
 #     print()
 
 # =======================================================

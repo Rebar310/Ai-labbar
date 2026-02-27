@@ -4,36 +4,28 @@ import matplotlib.pyplot as plt
 
 
 # ---------- 1) Load data ----------
-with open("Task_4_data.pkl", "rb") as f:
-    df = pickle.load(f)  # brukar vara en pandas DataFrame
+data = "Task_3_data.pkl" # Filnamnet (sträng) till datasetet som ska laddas
+with open(data, "rb") as f: # Öppnar filen i binärt läsläge ("rb" = read binary)
+    data = pickle.load(f) # Läser in (deserialiserar) objektet från filen och sparar i variabeln data
 
-data = df.to_numpy(dtype=float)
+##### Convert the data into numpy arrays here ########
+
+data = np.array(data, dtype=float) # Konverterar datan till en NumPy-array och tvingar datatyp till float
 
 # Last column = y
 X_raw = data[:, :-1]
 y = data[:, -1]
 
-feature_names = list(df.columns[:-1])
-target_name = df.columns[-1]
+n_samples = len(y)
 
-n_samples, n_features = X_raw.shape
-print(f"Samples: {n_samples}, Features: {n_features}")
-print("Features:", feature_names)
-print("Target:", target_name)
-
-# ---------- (Rekommenderat) Standardisera features för stabilare GD ----------
-mu = X_raw.mean(axis=0)
-sigma = X_raw.std(axis=0) + 1e-12
-X_std = (X_raw - mu) / sigma
-
-# Lägg till bias/intercept (kolumn med 1:or)
-X = np.c_[np.ones(n_samples), X_std]
+# Lägg till bias/intercept
+X = np.c_[np.ones(n_samples), X_raw]
 
 # Initiala vikter (måste matcha antal kolumner i X)
 init_weights = np.zeros(X.shape[1])
 
 # ---------- Hyperparametrar ----------
-learning_rate = 0.1
+learning_rate = 0.6
 epsilon_conv = 0.001   # "Automatic convergence test" från sliden
 max_iter = 100000
 
@@ -56,56 +48,38 @@ def GradientDescent(X, y, init_weights, iterations):
         costs.append(cost_function(X, y, weights))
     return weights, costs
 
-# ---------- 3) Träna + hitta konvergens-iteration ----------
+# ---------- 3) Träna + 4) Konvergens ----------
 weights, costs = GradientDescent(X, y, init_weights, max_iter)
 
 converged_at = None
 for t in range(1, len(costs)):
-    decrease = costs[t-1] - costs[t]   # J_{t-1} - J_t
+    decrease = costs[t - 1] - costs[t]
     if 0 <= decrease <= epsilon_conv:
-        converged_at = t + 1  # 1-indexad iteration
+        converged_at = t + 1
         break
 
-print("\n=== RESULTS ===")
-print(f"Final MSE: {costs[-1]:.6f}")
-if converged_at is None:
-    print(f"Convergence: NOT reached within {max_iter} iterations (ε={epsilon_conv})")
-else:
-    print(f"Convergence: reached at iteration {converged_at} (ε={epsilon_conv})")
+print("\nFinal MSE:", costs[-1])
+print("Converged at iteration:", converged_at)
 
-# ---------- 4) Presentera slutlig linjär modell (i ORIGINAL SKALA) ----------
-# Modellen du tränade är på standardiserad form:
-# y = w0 + sum_i w_i * (x_i - mu_i)/sigma_i
-# Konvertera till rå (original) skala:
-w0_std = weights[0]
-w_std = weights[1:]
+# ---------- 4) Slutlig modell ----------
+print("\nFinal linear regression model:")
+print("y =", weights[0], end="")
+for i, coef in enumerate(weights[1:], start=1):
+    print(f" + ({coef})*x{i}", end="")
+print()
 
-coef_raw = w_std / sigma
-intercept_raw = w0_std - np.sum((w_std * mu) / sigma)
+# _____________ Plot Cost _________________
 
-print("\nFinal linear regression model (original scale):")
-print(f"{target_name} = {intercept_raw:.6f}", end="")
-for fname, c in zip(feature_names, coef_raw):
-    print(f" + ({c:.6f})*{fname}", end="")
-print("\n")
+iterations = 25 # Antal iterationer att köra varje optimerare
 
-# ---------- 5) Plot learning curve + markera konvergens ----------
+plt.figure(figsize=(8,6))
 
-iters = np.arange(1, len(costs) + 1)  # 1-indexade iterationer
-
-max_show = 50  # antal iterationer du vill visa
-
-plt.figure(figsize=(9,5))
-plt.plot(iters[:max_show], costs[:max_show], label="MSE (first 50)")
-
-if converged_at is not None and converged_at <= max_show:
-    plt.axvline(converged_at, linestyle="--", label=f"Convergence @ {converged_at}")
-    plt.scatter([converged_at], [costs[converged_at - 1]])
+weights, costs = GradientDescent(X, y, init_weights, iterations)
+plt.plot(costs)
 
 plt.xlabel("Iteration")
 plt.ylabel("Cost (MSE)")
-plt.title("Learning curve (first 50 iterations)")
-plt.grid(True)
+plt.title("Learning Curves for All Optimizers")
 plt.legend()
+plt.grid(True)
 plt.show()
-
