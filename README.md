@@ -17,3 +17,4 @@ Den bygger på en riskbaserad modell. Det betyder att AI-system delas in i olika
 
 ## Task 2
 https://youtu.be/jr_BcU4QlNE?si=03WnrSJy_jMXYT0r
+https://youtu.be/bN-yBh4GAeY?si=dN3LAB-1i53QwrBP
