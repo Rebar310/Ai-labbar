@@ -4,10 +4,15 @@ import numpy as np
 data = np.load("credit_score_fairness_data.npy")  # ändra sökväg om filen ligger annanstans
 
 # 2) Columns: ["Protected attribute", "True credit worthiness", "Algorithm prediction"]
-A = data[:, 0].astype(int)   # protected attribute (t.ex. 0/1)
-Y = data[:, 1].astype(int)   # true label (0/1)
-Yhat = data[:, 2].astype(int) # prediction (0/1)
+A = data[:, 0].astype(int)   # protected attribute (t.ex. 0/1),
+Y = data[:, 1].astype(int)   # true label (0/1), som ett facit
+Ypred = data[:, 2].astype(int) # algorithm prediction (0/1)
 
+# “Good credit” = 1, “Bad credit” = 0
+# TP = True Positive
+# TN = True Negative
+# FP = False Positive
+# FN = False Negative
 def confusion_matrix_elements(y_true, y_pred):
     """Returnerar TP, TN, FP, FN."""
     TP = np.sum((y_true == 1) & (y_pred == 1))
@@ -17,14 +22,14 @@ def confusion_matrix_elements(y_true, y_pred):
     return TP, TN, FP, FN
 
 def safe_div(n, d):
-    return n / d if d != 0 else np.nan
+    return n / d if d != 0 else np.nan # division with zero
 
-groups = np.unique(A)
-metrics = {}
+groups = np.unique(A) # gets unique values in group A, groups=[0,1]
+metrics = {} # dictionary to later save the grups
 
-for g in groups:
-    mask = (A == g)
-    TP, TN, FP, FN = confusion_matrix_elements(Y[mask], Yhat[mask])
+for g in groups: #first loop over 0, then 1
+    mask = (A == g) #creates a true/ false-array
+    TP, TN, FP, FN = confusion_matrix_elements(Y[mask], Ypred[mask]) #masks away every false row
 
     # Equal Opportunity rate = TPR
     TPR = safe_div(TP, TP + FN)
@@ -35,6 +40,7 @@ for g in groups:
     # Equalized Error Rates (vanligt i uppgifter = jämför FPR och FNR)
     FNR = safe_div(FN, TP + FN)
 
+    # Saves results in group for 0-data and 1-data
     metrics[g] = {"TP": TP, "TN": TN, "FP": FP, "FN": FN, "TPR": TPR, "FPR": FPR, "FNR": FNR}
 
 # Print confusion matrix + rates per group
