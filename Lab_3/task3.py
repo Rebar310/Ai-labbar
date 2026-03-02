@@ -1,177 +1,175 @@
-import random
-from typing import List, Tuple
+import numpy as np
 
+# This task has much inspiration from Lecture 9
 # ============================================================
-# Rook's problem: 10 rooks on 10x10 board, no shared row/column
-# Evolutionary algorithm (Genetic Algorithm)
+# Rook's problem (10 rooks on 10x10) with Evolutionary Algorithm
+# Style aligned with lecture: binary representation + crossover + mutation
 # ============================================================
 
-N = 10  # board size and number of rooks
+N = 10                 # board size
+GENE_LEN = N * N       # 100 bits (10x10 flattened)
+N_ROOKS = 10           # we want exactly 10 rooks
 
-# ------------------------------------------------------------
-# 1) Representation (Genotype -> Phenotype)
-# ------------------------------------------------------------
+# -------------------------------
+# 1) Representation (Genotype)
+# -------------------------------
+# Chromosome = binary string / vector of length 100:
+#   gene[k] in {0,1}
+# Mapping gene index -> board cell:
+#   row = k // N, col = k % N
+# gene[k]=1 means: place a rook at (row, col).
+# Phenotype = the decoded 10x10 board.
+# -------------------------------
 
-Genome = List[int]
+def decode(chrom: np.ndarray) -> np.ndarray:
+    """Decode 100-bit chromosome into NxN board."""
+    return chrom.reshape(N, N)
 
-def random_genome() -> Genome:
-    """Create a random permutation (candidate solution)."""
-    g = list(range(N))
-    random.shuffle(g)
-    return g
-
-# ------------------------------------------------------------
-# 2) Fitness function
-# ------------------------------------------------------------
-
-def rook_conflicts(genome: Genome) -> int:
+def random_individual(p_one: float = 0.10) -> np.ndarray:
     """
-    Count number of attacking pairs (same row or same column).
-    - Row is unique by construction (index), so no row conflicts.
-    - Column conflicts occur if genome has duplicates (not with permutations).
+    Create a random chromosome with bits ~ Bernoulli(p_one).
+    p_one ~ 0.10 => expected ~10 ones (since 100*0.10=10).
     """
-    # Count column duplicates:
-    cols = genome
-    conflicts = 0
-    # For each column, count how many rooks are there; if k rooks share it,
-    # they create k*(k-1)/2 attacking pairs.
-    for c in set(cols):
-        k = cols.count(c)
-        if k > 1:
-            conflicts += k * (k - 1) // 2
-    return conflicts
+    return (np.random.rand(GENE_LEN) < p_one).astype(int)
 
+# -------------------------------
+# 2) Fitness function (minimize)
+# -------------------------------
+# We want:
+# - exactly 10 rooks
+# - <=1 rook per row
+# - <=1 rook per column
+#
+# Penalty-based fitness (lower is better, 0 is perfect):
+#   penalty = w_count * |#rooks - 10|
+#           + w_row   * sum_row max(0, row_count-1)
+#           + w_col   * sum_col max(0, col_count-1)
+# -------------------------------
 
-def fitness(genome: Genome) -> int:
-    """Lower fitness is better (0 = solved)."""
-    return rook_conflicts(genome)
+def fitness(chrom: np.ndarray,
+            w_count: int = 5,
+            w_row: int = 10,
+            w_col: int = 10) -> int:
+    board = decode(chrom)
+    rook_count = board.sum()
 
-# ------------------------------------------------------------
-# 3) Selection (Tournament selection)
-# ------------------------------------------------------------
-# Select parents biased toward better fitness.
-# ------------------------------------------------------------
+    row_counts = board.sum(axis=1)  # length 10
+    col_counts = board.sum(axis=0)  # length 10
 
-def tournament_select(population: List[Genome], k: int = 3) -> Genome:
-    """Pick k random individuals and return the best among them."""
-    contestants = random.sample(population, k)
-    return min(contestants, key=fitness)
+    # Extra rooks in rows/cols beyond 1 create conflicts.
+    row_conflicts = np.sum(np.maximum(0, row_counts - 1))
+    col_conflicts = np.sum(np.maximum(0, col_counts - 1))
 
-# ------------------------------------------------------------
-# 4) Crossover (Order Crossover - OX) for permutations
-# ------------------------------------------------------------
-# Must keep permutation property (no duplicates).
-# ------------------------------------------------------------
+    count_penalty = abs(rook_count - N_ROOKS)
 
-def order_crossover(p1: Genome, p2: Genome) -> Genome:
-    """
-    Order crossover (OX):
-    - Copy a slice from parent1
-    - Fill remaining positions in the order they appear in parent2
-    """
-    a, b = sorted(random.sample(range(N), 2))
-    child = [None] * N
+    return int(w_count * count_penalty + w_row * row_conflicts + w_col * col_conflicts)
 
-    # Copy slice from p1
-    child[a:b+1] = p1[a:b+1]
+# -------------------------------
+# 3) Selection (Tournament)
+# -------------------------------
+def tournament_select(population, k=3):
+    """Pick k random individuals and return the best (lowest fitness)."""
+    idx = np.random.choice(len(population), size=k, replace=False)
+    candidates = [population[i] for i in idx]
+    return min(candidates, key=fitness)
 
-    # Fill remaining from p2 in order, skipping used values
-    used = set(child[a:b+1])
-    fill_positions = [i for i in range(N) if child[i] is None]
-    fill_values = [x for x in p2 if x not in used]
+# -------------------------------
+# 4) Crossover (Double-point)
+# -------------------------------
+# Matches "Double-point crossover" idea in slides.
+def double_point_crossover(p1: np.ndarray, p2: np.ndarray):
+    a, b = np.sort(np.random.choice(GENE_LEN, size=2, replace=False))
+    c1 = p1.copy()
+    c2 = p2.copy()
+    c1[a:b] = p2[a:b]
+    c2[a:b] = p1[a:b]
+    return c1, c2
 
-    for pos, val in zip(fill_positions, fill_values):
-        child[pos] = val
+# -------------------------------
+# 5) Mutation (Bit-flip)
+# -------------------------------
+# Matches "Mutation" in slides: flip selected gene(s)
+def bitflip_mutation(chrom: np.ndarray, mutation_rate: float = 0.02) -> np.ndarray:
+    child = chrom.copy()
+    flip_mask = (np.random.rand(GENE_LEN) < mutation_rate)
+    child[flip_mask] = 1 - child[flip_mask]
+    return child
 
-    # type checker: child is now complete permutation
-    return child  # type: ignore
+# -------------------------------
+# 6) EA main loop (Formulation)
+# -------------------------------
+# Initialization -> Population
+# repeat:
+#   Select parents
+#   Crossover
+#   Mutation
+#   Evaluate
+#   Elitist replacement (keep best)
+# until termination condition (fitness==0 or max generations)
+# -------------------------------
 
-# ------------------------------------------------------------
-# 5) Mutation (Swap mutation) for permutations
-# ------------------------------------------------------------
+def solve_rooks_ea(pop_size=80, generations=2000,
+                   crossover_rate=0.9, mutation_rate=0.02,
+                   elitism=1, seed=0):
+    np.random.seed(seed)
 
-def swap_mutation(genome: Genome, p_mut: float = 0.2) -> Genome:
-    """With probability p_mut, swap two positions (rows)."""
-    g = genome[:]
-    if random.random() < p_mut:
-        i, j = random.sample(range(N), 2)
-        g[i], g[j] = g[j], g[i]
-    return g
-
-
-# ------------------------------------------------------------
-# 6) Evolution loop (GA / EA)
-# ------------------------------------------------------------
-
-def solve_rooks_ea(
-    pop_size: int = 50,
-    generations: int = 200,
-    crossover_rate: float = 0.9,
-    mutation_rate: float = 0.2,
-    tournament_k: int = 3,
-    elitism: int = 1,
-    seed: int | None = 0,
-) -> Tuple[Genome, int]:
-    if seed is not None:
-        random.seed(seed)
-
-    # Initialize population
-    population = [random_genome() for _ in range(pop_size)]
+    # Initialization
+    population = [random_individual(p_one=0.10) for _ in range(pop_size)]
 
     for gen in range(1, generations + 1):
-        # Sort by fitness to apply elitism and for reporting
+        # Evaluate & sort
         population.sort(key=fitness)
         best = population[0]
         best_fit = fitness(best)
 
-        # Termination: solved
+        # Termination condition
         if best_fit == 0:
-            print(f"Solved at generation {gen}, fitness={best_fit}")
-            return best, gen
+            return best, gen, best_fit
 
-        # Build next generation
-        new_pop: List[Genome] = []
-
-        # Elitism: keep top individuals
-        new_pop.extend(population[:elitism])
+        # Next generation (elitist replacement keeps top 'elitism')
+        new_pop = population[:elitism]
 
         while len(new_pop) < pop_size:
-            # Selection
-            p1 = tournament_select(population, k=tournament_k)
-            p2 = tournament_select(population, k=tournament_k)
+            # Select
+            p1 = tournament_select(population, k=3)
+            p2 = tournament_select(population, k=3)
 
             # Crossover
-            if random.random() < crossover_rate:
-                child = order_crossover(p1, p2)
+            if np.random.rand() < crossover_rate:
+                c1, c2 = double_point_crossover(p1, p2)
             else:
-                child = p1[:]  # clone
+                c1, c2 = p1.copy(), p2.copy()
 
             # Mutation
-            child = swap_mutation(child, p_mut=mutation_rate)
+            c1 = bitflip_mutation(c1, mutation_rate)
+            c2 = bitflip_mutation(c2, mutation_rate)
 
-            new_pop.append(child)
+            new_pop.append(c1)
+            if len(new_pop) < pop_size:
+                new_pop.append(c2)
 
         population = new_pop
 
-    # If not found early, return best of last generation
+    # If no perfect solution found, return best found
     population.sort(key=fitness)
-    return population[0], generations
+    return population[0], generations, fitness(population[0])
 
-
-# ------------------------------------------------------------
-# 7) Run and present result
-# ------------------------------------------------------------
-
+# -------------------------------
+# 7) Run + present solution
+# -------------------------------
 if __name__ == "__main__":
-    solution, gens = solve_rooks_ea()
+    best, gen, best_fit = solve_rooks_ea()
 
-    print("\nFinal solution genome (row -> column):")
-    print(solution)
-    print("Conflicts:", fitness(solution))
+    board = decode(best)
+    print(f"Solved? {'YES' if best_fit==0 else 'NO'} | best fitness={best_fit} | generation={gen}")
+    print("Rook count:", board.sum())
 
-    # Pretty-print as board
-    print("\nBoard (R = rook):")
+    # Print board
+    # R = rook, . = empty
     for r in range(N):
-        row = ["." for _ in range(N)]
-        row[solution[r]] = "R"
+        row = ["R" if board[r, c] == 1 else "." for c in range(N)]
         print(" ".join(row))
+
+    # Also show row/col counts (helpful debug)
+    print("Row counts:", board.sum(axis=1))
+    print("Col counts:", board.sum(axis=0))
