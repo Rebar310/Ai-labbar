@@ -8,7 +8,6 @@ import random
 weights = [2, 3, 6, 7, 5]     # example
 values  = [6, 5, 8, 9, 6]     # example
 capacity = 15                 # example
-# ------------------------------------
 
 n = len(weights)
 

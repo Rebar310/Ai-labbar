@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 # ---------- 1) Load data ----------
-data = "Task_3_data.pkl" # Filnamnet (sträng) till datasetet som ska laddas
+data = "Task_4_data.pkl" # Filnamnet (sträng) till datasetet som ska laddas
 with open(data, "rb") as f: # Öppnar filen i binärt läsläge ("rb" = read binary)
     data = pickle.load(f) # Läser in (deserialiserar) objektet från filen och sparar i variabeln data
 
@@ -58,7 +58,13 @@ for t in range(1, len(costs)):
         converged_at = t + 1
         break
 
-print("\nFinal MSE:", costs[-1])
+# Välj MSE att rapportera: vid konvergens om den finns
+if converged_at is None:
+    final_mse_to_report = costs[-1]
+else:
+    final_mse_to_report = costs[converged_at - 1]  # index = iter-1
+
+print("\nFinal MSE:", final_mse_to_report)
 print("Converged at iteration:", converged_at)
 
 # ---------- 4) Slutlig modell ----------
@@ -70,16 +76,12 @@ print()
 
 # _____________ Plot Cost _________________
 
-iterations = 25 # Antal iterationer att köra varje optimerare
-
+# ---------- Plot Cost ----------
 plt.figure(figsize=(8,6))
-
-weights, costs = GradientDescent(X, y, init_weights, iterations)
-plt.plot(costs)
-
+plt.plot(costs, label="GradientDescent")
 plt.xlabel("Iteration")
 plt.ylabel("Cost (MSE)")
-plt.title("Learning Curves for All Optimizers")
+plt.title("Learning Curve (MSE)")
 plt.legend()
 plt.grid(True)
 plt.show()
