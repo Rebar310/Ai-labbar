@@ -16,6 +16,8 @@ data = np.array(data, dtype=float) # Konverterar datan till en NumPy-array och t
 X_raw = data[:, :-1]
 y = data[:, -1]
 
+
+
 n_samples = len(y)
 
 # Lägg till bias/intercept
@@ -25,9 +27,9 @@ X = np.c_[np.ones(n_samples), X_raw]
 init_weights = np.zeros(X.shape[1])
 
 # ---------- Hyperparametrar ----------
-learning_rate = 0.6
-epsilon_conv = 0.001   # "Automatic convergence test" från sliden
-max_iter = 100000
+learning_rate = 0.3
+#epsilon_conv = 0.001   # "Automatic convergence test" från sliden
+max_iter = 100
 
 # ---------- 2) Återanvända Task 3-funktioner ----------
 def cost_function(X, y, weights):
@@ -51,21 +53,23 @@ def GradientDescent(X, y, init_weights, iterations):
 # ---------- 3) Träna + 4) Konvergens ----------
 weights, costs = GradientDescent(X, y, init_weights, max_iter)
 
-converged_at = None
-for t in range(1, len(costs)):
-    decrease = costs[t - 1] - costs[t]
-    if 0 <= decrease <= epsilon_conv:
-        converged_at = t + 1
-        break
+# converged_at = None
+# for t in range(1, len(costs)):
+#     decrease = costs[t - 1] - costs[t]
+#     if 0 <= decrease <= epsilon_conv:
+#         converged_at = t + 1
+#         break
 
-# Välj MSE att rapportera: vid konvergens om den finns
-if converged_at is None:
-    final_mse_to_report = costs[-1]
-else:
-    final_mse_to_report = costs[converged_at - 1]  # index = iter-1
+# # Välj MSE att rapportera: vid konvergens om den finns
+# if converged_at is None:
+#     final_mse_to_report = costs[-1]
+# else:
+#     final_mse_to_report = costs[converged_at - 1]  # index = iter-1
 
-print("\nFinal MSE:", final_mse_to_report)
-print("Converged at iteration:", converged_at)
+# print("\nFinal MSE:", final_mse_to_report)
+# print("Converged at iteration:", converged_at)
+
+print("\nFinal MSE (after max_iter):", costs[-1])
 
 # ---------- 4) Slutlig modell ----------
 print("\nFinal linear regression model:")
@@ -74,7 +78,6 @@ for i, coef in enumerate(weights[1:], start=1):
     print(f" + ({coef})*x{i}", end="")
 print()
 
-# _____________ Plot Cost _________________
 
 # ---------- Plot Cost ----------
 plt.figure(figsize=(8,6))
@@ -85,3 +88,4 @@ plt.title("Learning Curve (MSE)")
 plt.legend()
 plt.grid(True)
 plt.show()
+
