@@ -20,8 +20,13 @@ y = data[:, -1]
 
 n_samples = len(y)
 
+print(np.ones(n_samples).shape)
+print(np.ones((n_samples,1)).shape)
+print(X_raw.shape)
+
 # Lägg till bias/intercept
-X = np.c_[np.ones(n_samples), X_raw]
+X = np.hstack((np.ones((n_samples,1)), X_raw))
+print(X)
 
 # Initiala vikter (måste matcha antal kolumner i X)
 init_weights = np.zeros(X.shape[1])
