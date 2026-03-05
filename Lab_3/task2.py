@@ -4,9 +4,13 @@ import numpy as np
 data = np.load("credit_score_fairness_data.npy")  # ändra sökväg om filen ligger annanstans
 
 # 2) Columns: ["Protected attribute", "True credit worthiness", "Algorithm prediction"]
-A = data[:, 0].astype(int)   # protected attribute (t.ex. 0/1),
-Y = data[:, 1].astype(int)   # true label (0/1), som ett facit
-Ypred = data[:, 2].astype(int) # algorithm prediction (0/1)
+A = data[:, 0].astype(int)   # protected attribute (grupp 0/1)
+Y = data[:, 1].astype(int)   # true label (facit)
+Ypred = data[:, 2].astype(int) # algorithm prediction, modellens prediction (0/1)
+
+print("A:",A)
+print("Y:",Y)
+print("Ypred:",Ypred)
 
 # “Good credit” = 1, “Bad credit” = 0
 # TP = True Positive
@@ -25,11 +29,13 @@ def safe_div(n, d):
     return n / d if d != 0 else np.nan # division with zero
 
 groups = np.unique(A) # gets unique values in group A, groups=[0,1]
+print("Groups:",groups)
 metrics = {} # dictionary to later save the grups
 
 for g in groups: #first loop over 0, then 1
-    mask = (A == g) #creates a true/ false-array
+    mask = (A == g) #creates a true/ false-array (if true then value belongs to that group)
     TP, TN, FP, FN = confusion_matrix_elements(Y[mask], Ypred[mask]) #masks away every false row
+    print("mask:",mask)
 
     # Equal Opportunity rate = TPR
     TPR = safe_div(TP, TP + FN)
@@ -43,6 +49,8 @@ for g in groups: #first loop over 0, then 1
     # Saves results in group for 0-data and 1-data
     metrics[g] = {"TP": TP, "TN": TN, "FP": FP, "FN": FN, "TPR": TPR, "FPR": FPR, "FNR": FNR}
 
+print("-----------------------------------------")
+
 # Print confusion matrix + rates per group
 for g in groups:
     m = metrics[g]
@@ -55,7 +63,8 @@ for g in groups:
 # 4) Differences across groups (assuming 2 groups: 0 and 1)
 if len(groups) == 2:
     g0, g1 = groups[0], groups[1]
-
+    # 0,1
+    
     # Equal Opportunity difference = |TPR0 - TPR1|
     eq_opp_diff = abs(metrics[g0]["TPR"] - metrics[g1]["TPR"])
 
