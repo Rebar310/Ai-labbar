@@ -120,20 +120,21 @@ def solve_rooks_ea(pop_size=80, generations=2000,
             p2 = tournament_select(population, k=3)
 
             # Crossover 
-            if np.random.rand() < crossover_rate:
+            if np.random.rand() < crossover_rate: # 90% chance of crossing genes
                 c1, c2 = double_point_crossover(p1, p2)
             else:
-                c1, c2 = p1.copy(), p2.copy()
+                c1, c2 = p1.copy(), p2.copy() #become copies of parents
 
-            # Mutation
+            # Mutation always happends
             c1 = bitflip_mutation(c1, mutation_rate)
             c2 = bitflip_mutation(c2, mutation_rate)
-
+            
+            # Fill up with individuals
             new_pop.append(c1)
             if len(new_pop) < pop_size:
                 new_pop.append(c2)
 
-        population = new_pop
+        population = new_pop #This will change to the new generation of children
 
     # If no perfect solution found, return best found
     population.sort(key=fitness)
