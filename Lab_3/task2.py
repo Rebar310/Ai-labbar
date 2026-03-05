@@ -38,7 +38,7 @@ for g in groups: #first loop over 0, then 1
     TP, TN, FP, FN = confusion_matrix_elements(Y[mask], Ypred[mask]) #masks away every false row
     print("mask:",mask)
 
-    # Equal Opportunity rate = TPR
+    # Equal Opportunity rate = TPR (best)
     TPR = safe_div(TP, TP + FN)
 
     # False positive rate (för Equalized Odds)
@@ -83,9 +83,9 @@ if len(groups) == 2:
 
     # Simple fairness rule-of-thumb (du kan ändra tröskel)
     threshold = 0.05
-    if tpr_diff < threshold and fpr_diff < threshold:
-        print("\nConclusion: Roughly fair under Equalized Odds (small TPR & FPR differences).")
+    if tpr_diff < threshold and fpr_diff < threshold and fnr_diff < threshold:
+        print("\nConclusion: Roughly fair (small differences in TPR, FPR, and FNR across groups).")
     else:
-        print("\nConclusion: Not fair under Equalized Odds (large TPR and/or FPR difference).")
-else:
+        print("\nConclusion: Not fair (large differences in TPR, FPR, and/or FNR across groups).")
+else: 
     print("\nNote: More than 2 protected groups detected; compare pairwise if needed.")
