@@ -8,6 +8,7 @@ A = data[:, 0].astype(int)   # protected attribute (grupp 0/1)
 Y = data[:, 1].astype(int)   # true label (facit)
 Ypred = data[:, 2].astype(int) # algorithm prediction, modellens prediction (0/1)
 
+print("Data:",data)
 print("A:",A)
 print("Y:",Y)
 print("Ypred:",Ypred)
@@ -64,7 +65,7 @@ for g in groups:
 if len(groups) == 2:
     g0, g1 = groups[0], groups[1]
     # 0,1
-    
+
     # Equal Opportunity difference = |TPR0 - TPR1|
     eq_opp_diff = abs(metrics[g0]["TPR"] - metrics[g1]["TPR"])
 

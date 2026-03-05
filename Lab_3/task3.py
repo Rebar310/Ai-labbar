@@ -1,113 +1,94 @@
 import numpy as np
 
-# This task has much inspiration from Lecture 9
-# ============================================================
 # Rook's problem (10 rooks on 10x10) with Evolutionary Algorithm
 # Style aligned with lecture: binary representation + crossover + mutation
-# ============================================================
+# inspo from lecture 9
 
-N = 10                 # board size
-GENE_LEN = N * N       # 100 bits (10x10 flattened)
-N_ROOKS = 10           # we want exactly 10 rooks
+N = 10        # board size
+#Defines length of the Chromosome(how many genes it has)
+GENE_LEN = N * N  # 100 bits (10x10 flattened)(possible placements)
+N_ROOKS = 10    # we want exactly 10 rooks
 
-# -------------------------------
-# 1) Representation (Genotype)
-# -------------------------------
-# Chromosome = binary string / vector of length 100:
-#   gene[k] in {0,1}
-# Mapping gene index -> board cell:
-#   row = k // N, col = k % N
-# gene[k]=1 means: place a rook at (row, col).
-# Phenotype = the decoded 10x10 board.
-# -------------------------------
+# One Chromosome will be a binary vector with 100 elements.
+# each element will be a place on the board
+# row = k // N
+# col = k % N
 
+# Makes the chromosome go from 1D-array with 100 genes to 2D-chessboard(phenotype)
 def decode(chrom: np.ndarray) -> np.ndarray:
     """Decode 100-bit chromosome into NxN board."""
-    return chrom.reshape(N, N)
+    return chrom.reshape(N, N) #forms 1x100 to 10x10
 
+# p_one is the probabability that a gene becomes 1
 def random_individual(p_one: float = 0.10) -> np.ndarray:
     """
     Create a random chromosome with bits ~ Bernoulli(p_one).
     p_one ~ 0.10 => expected ~10 ones (since 100*0.10=10).
     """
     return (np.random.rand(GENE_LEN) < p_one).astype(int)
+    # creates Gene_len (=100) random numbers between 0 and 1
+    # then creates an true,false array and converts to (1,0)
+    # False = 0, True = 1 
+    # Alltså har nu denna skapat en random chromosome = [0,1,0,1,1,0,0,1,0,....]
+    # Hopefully the chromosome have near 10 rooks
 
-# -------------------------------
-# 2) Fitness function (minimize)
-# -------------------------------
-# We want:
-# - exactly 10 rooks
-# - <=1 rook per row
-# - <=1 rook per column
-#
-# Penalty-based fitness (lower is better, 0 is perfect):
-#   penalty = w_count * |#rooks - 10|
-#           + w_row   * sum_row max(0, row_count-1)
-#           + w_col   * sum_col max(0, col_count-1)
-# -------------------------------
-
+# decides how good a solution is
+# the lower the value the better solution, 0= perfect
 def fitness(chrom: np.ndarray,
-            w_count: int = 5,
-            w_row: int = 10,
-            w_col: int = 10) -> int:
-    board = decode(chrom)
-    rook_count = board.sum()
+            w_count: int = 5, # weight for wrong number of rooks
+            w_row: int = 10, # weight for row conflict
+            w_col: int = 10) -> int: # weight for column conflict
+    
+    board = decode(chrom) #makes chromosome into chessboard
+    rook_count = board.sum() #rooks are represented by ones, therefore we can count
 
-    row_counts = board.sum(axis=1)  # length 10
-    col_counts = board.sum(axis=0)  # length 10
+    row_counts = board.sum(axis=1)  # counts rooks/row
+    col_counts = board.sum(axis=0)  # counts rooks/col
 
     # Extra rooks in rows/cols beyond 1 create conflicts.
-    row_conflicts = np.sum(np.maximum(0, row_counts - 1))
-    col_conflicts = np.sum(np.maximum(0, col_counts - 1))
+    row_conflicts = np.sum(np.maximum(0, row_counts - 1)) #sum up how many unneccasary rooks we have
+    col_conflicts = np.sum(np.maximum(0, col_counts - 1)) # every value under zero does not count
 
+    # how many rooks is there left on the board, perfekt = abs(10-10) = 0
     count_penalty = abs(rook_count - N_ROOKS)
 
+    # Sum up the fitness value
     return int(w_count * count_penalty + w_row * row_conflicts + w_col * col_conflicts)
 
-# -------------------------------
-# 3) Selection (Tournament)
-# -------------------------------
+# population is a list with all chromosomes and k is how many chromosomes will be tested.
 def tournament_select(population, k=3):
     """Pick k random individuals and return the best (lowest fitness)."""
-    idx = np.random.choice(len(population), size=k, replace=False)
-    candidates = [population[i] for i in idx]
-    return min(candidates, key=fitness)
+    idx = np.random.choice(len(population), size=k, replace=False) # pick random k index, do not pick the same twice
+    candidates = [population[i] for i in idx] # get the chromosomes from the index pick
+    return min(candidates, key=fitness) #Run the fitness function and collect the one with best solution
 
-# -------------------------------
-# 4) Crossover (Double-point)
-# -------------------------------
-# Matches "Double-point crossover" idea in slides.
+
+# Matches "Double-point crossover" idea in slides. 
+# gets in two parent cromosomes
 def double_point_crossover(p1: np.ndarray, p2: np.ndarray):
-    a, b = np.sort(np.random.choice(GENE_LEN, size=2, replace=False))
-    c1 = p1.copy()
-    c2 = p2.copy()
-    c1[a:b] = p2[a:b]
+    a, b = np.sort(np.random.choice(GENE_LEN, size=2, replace=False)) #choose two crossover points, sort them so a is smaller then b
+    c1 = p1.copy() #child one copy parent1
+    c2 = p2.copy() #cild two copy parent 2
+    c1[a:b] = p2[a:b] # just like the slides we now swith the segment 
     c2[a:b] = p1[a:b]
-    return c1, c2
+    return c1, c2 # each child will now have been created from parts of their parents
 
-# -------------------------------
-# 5) Mutation (Bit-flip)
-# -------------------------------
+
 # Matches "Mutation" in slides: flip selected gene(s)
+# takes in chromosome and the probability of a gen changeing %
 def bitflip_mutation(chrom: np.ndarray, mutation_rate: float = 0.02) -> np.ndarray:
-    child = chrom.copy()
-    flip_mask = (np.random.rand(GENE_LEN) < mutation_rate)
-    child[flip_mask] = 1 - child[flip_mask]
+    child = chrom.copy() #make a child identicl to the chromosome
+    flip_mask = (np.random.rand(GENE_LEN) < mutation_rate) #create array with random numbers between 0 and 100 and compares with mutation rate
+    # flip mask will beccome a true/false array where true means that the gene should mutate
+    child[flip_mask] = 1 - child[flip_mask] #this creates the mutation by flipping the values
     return child
 
-# -------------------------------
-# 6) EA main loop (Formulation)
-# -------------------------------
-# Initialization -> Population
-# repeat:
-#   Select parents
-#   Crossover
-#   Mutation
-#   Evaluate
-#   Elitist replacement (keep best)
-# until termination condition (fitness==0 or max generations)
-# -------------------------------
-
+# pop_size = how many individuals (chromosomes ) there are in one population
+# generations = how many genorations to test on
+# crossover rate = probability for crossover
+# probability for mutation
+# elitsim = how many of the best copies to the next generation
+# seed = 0 makes it reproduceable
 def solve_rooks_ea(pop_size=80, generations=2000,
                    crossover_rate=0.9, mutation_rate=0.02,
                    elitism=1, seed=0):
@@ -115,26 +96,30 @@ def solve_rooks_ea(pop_size=80, generations=2000,
 
     # Initialization
     population = [random_individual(p_one=0.10) for _ in range(pop_size)]
+    # creates 80 random chromosomes each 100 bits where 10 bits at least are 1 in averge
 
+    # Loop over generations
     for gen in range(1, generations + 1):
-        # Evaluate & sort
+        # Evaluate & sort fitness for one in each population for this generation
         population.sort(key=fitness)
-        best = population[0]
+        best = population[0] #the best fit will come first
         best_fit = fitness(best)
 
-        # Termination condition
+        # Termination condition if we find a perfect fit
         if best_fit == 0:
             return best, gen, best_fit
 
         # Next generation (elitist replacement keeps top 'elitism')
+        # copies the best chromosome inte the next generation
         new_pop = population[:elitism]
-
+        
+        # Fill upp the new population with children 
         while len(new_pop) < pop_size:
-            # Select
+            # Select parents
             p1 = tournament_select(population, k=3)
             p2 = tournament_select(population, k=3)
 
-            # Crossover
+            # Crossover 
             if np.random.rand() < crossover_rate:
                 c1, c2 = double_point_crossover(p1, p2)
             else:
@@ -153,6 +138,7 @@ def solve_rooks_ea(pop_size=80, generations=2000,
     # If no perfect solution found, return best found
     population.sort(key=fitness)
     return population[0], generations, fitness(population[0])
+
 
 # -------------------------------
 # 7) Run + present solution
