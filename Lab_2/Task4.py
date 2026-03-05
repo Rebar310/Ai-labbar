@@ -19,9 +19,10 @@ m, n = X.shape
 print(f"Dataset loaded: {m} samples, {n} features")
 y=y.reshape(-1,1)  # gör y till en kolumnvektor
 
+n_sampels=len(y)
 
-# Lägg till bias/intercept (kolumn med 1:or)
-X_b= np.c_[np.ones((m,1)), X]  # storlek (m,n+1)
+# Lägg till bias/intercept (kolumn med 1:or)(m,1)
+X_b= np.hstack((np.ones((m,1)), X)) # storlek (m,n+1)
 
 
 # Initiala vikter (måste matcha antal kolumner i X)
