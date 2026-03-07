@@ -78,7 +78,7 @@ if len(groups) == 2:
 
     print("\n=== Fairness comparisons ===")
     print(f"Equal Opportunity difference (TPR diff): {eq_opp_diff:.4f}")
-    print(f"Equalized Odds diffs: TPR diff={tpr_diff:.4f}, FPR diff={fpr_diff:.4f}")
+    #print(f"Equalized Odds diffs: TPR diff={tpr_diff:.4f}, FPR diff={fpr_diff:.4f}")
     print(f"Equalized Error Rates diffs: FPR diff={fpr_diff:.4f}, FNR diff={fnr_diff:.4f}")
 
     # Simple fairness rule-of-thumb (du kan ändra tröskel)

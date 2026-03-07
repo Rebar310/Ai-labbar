@@ -20,12 +20,9 @@ def decode(chrom: np.ndarray) -> np.ndarray:
     return chrom.reshape(N, N) #forms 1x100 to 10x10
 
 # p_one is the probabability that a gene becomes 1
-def random_individual(p_one: float = 0.10) -> np.ndarray:
-    """
-    Create a random chromosome with bits ~ Bernoulli(p_one).
-    p_one ~ 0.10 => expected ~10 ones (since 100*0.10=10).
-    """
-    return (np.random.rand(GENE_LEN) < p_one).astype(int)
+def random_individual() -> np.ndarray:
+    
+    return (np.random.rand(GENE_LEN).astype(int))
     # creates Gene_len (=100) random numbers between 0 and 1
     # then creates an true,false array and converts to (1,0)
     # False = 0, True = 1 
@@ -95,9 +92,8 @@ def solve_rooks_ea(pop_size=80, generations=2000,
     np.random.seed(seed)
 
     # Initialization
-    population = [random_individual(p_one=0.10) for _ in range(pop_size)]
+    population = [random_individual() for _ in range(pop_size)]
     # creates 80 random chromosomes each 100 bits where 10 bits at least are 1 in averge
-
     # Loop over generations
     for gen in range(1, generations + 1):
         # Evaluate & sort fitness for one in each population for this generation
@@ -130,9 +126,19 @@ def solve_rooks_ea(pop_size=80, generations=2000,
             c2 = bitflip_mutation(c2, mutation_rate)
             
             # Fill up with individuals
-            new_pop.append(c1)
-            if len(new_pop) < pop_size:
+            worst_fit = fitness(population[-1])
+
+            c1_fit = fitness(c1)
+            c2_fit = fitness(c2)
+            if c1_fit < worst_fit: 
+                new_pop.append(c1)
+            if c2_fit < worst_fit and len(new_pop) < pop_size :
                 new_pop.append(c2)
+
+            # - old code ---------
+            # new_pop.append(c1)
+            # if len(new_pop) < pop_size:
+            #     new_pop.append(c2)
 
         population = new_pop #This will change to the new generation of children
 
