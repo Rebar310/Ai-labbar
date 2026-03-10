@@ -5,10 +5,10 @@ import random
 # Knapsack1 – Unbounded version (EA inspired by Lecture 9)
 
 # Vikter (kg) för varje item 
-weights = [12, 2, 4, 1, 1]
+weights = [1, 1, 2, 4, 12]
 
 # Värde ($) för varje item 
-values = [4, 2, 10, 2, 1]
+values = [1, 2, 2, 10, 4]
 
 capacity = 15  # Max vikt ryggsäcken klarar
             
@@ -61,7 +61,7 @@ def crossover(parent1, parent2):
 
 
 # 5) Mutation (Gene-wise mutation – lecture mutation idea)
-def mutation(individual, mutation_rate=0.1):
+def mutation(individual, mutation_rate=0.3):
     new = individual[:] #gör kopia av individen
     for i in range(n):
         if random.random() < mutation_rate: #random.random ger ett tal mellan 0 och 1
@@ -74,7 +74,7 @@ def evolutionary_knapsack(
         pop_size=80,
         generations=300,
         crossover_rate=0.9,
-        mutation_rate=0.1,
+        mutation_rate=0.3,
         elitism=1):
 
     population = initialize_population(pop_size) #skapa population av individuals
@@ -103,22 +103,26 @@ def evolutionary_knapsack(
             child1 = mutation(child1, mutation_rate)
             child2 = mutation(child2, mutation_rate)
 
-            worst_fit = fitness(population[-1])
-
-            c1_fit = fitness(child1)
-            c2_fit = fitness(child2)
-
-            if c1_fit > worst_fit:
-                new_population.append(child1)
-            else:
-                new_population.append(parent1[:])
-
+            new_population.append(child1)
             if len(new_population) < pop_size:
-                if c2_fit > worst_fit:
-                    new_population.append(child2)
-            else:
-                new_population.append(parent2[:])
+                new_population.append(child2)
 
+            # worst_fit = fitness(population[-1])
+
+            # c1_fit = fitness(child1)
+            # c2_fit = fitness(child2)
+
+            # if c1_fit > worst_fit:
+            #     new_population.append(child1)
+            # else:
+            #     new_population.append(parent1[:])
+
+            # if len(new_population) < pop_size:
+            #     if c2_fit > worst_fit:
+            #         new_population.append(child2)
+            # else:
+            #     new_population.append(parent2[:])
+             
 
         population = new_population #nu byts generation alltså ny population
 
