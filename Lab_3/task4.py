@@ -43,8 +43,9 @@ def fitness(individual):
         return total_v
     else:
         # penalty proportional to overweight
-        penalty_factor = 1000
-        return total_v - penalty_factor * (total_w - capacity)
+        #penalty_factor = 1000
+        #return total_v - penalty_factor * (total_w - capacity)
+        return 0
 
 # 3) Selection (Tournament selection – mentioned in lecture)
 def tournament_selection(population, k=3):
@@ -67,6 +68,7 @@ def mutation(individual, mutation_rate=0.3):
         if random.random() < mutation_rate: #random.random ger ett tal mellan 0 och 1
             new[i] = random.randint(0, max_count[i]) # om mutation sker ändra värdet på den platsen mellan 0-5
     return new
+    
 
 
 # 6) Evolutionary Algorithm (Generational model)
@@ -85,6 +87,11 @@ def evolutionary_knapsack(
         population.sort(key=fitness, reverse=True) #bästa lösningen = högst fitness
         best = population[0] #bästa lösningen hamnar först i listan
 
+        # If we found perfect fit earlier
+        total_w = sum(best[i] * weights[i] for i in range(n))
+        if total_w == capacity:
+            return best, fitness(best)
+
         new_population = population[:elitism]  # keep best
 
         while len(new_population) < pop_size:
@@ -92,28 +99,30 @@ def evolutionary_knapsack(
             # Selection, slumpar ut parents
             parent1 = tournament_selection(population)
             parent2 = tournament_selection(population)
-
+   
             # Crossover
-            if random.random() < crossover_rate:
-                child1, child2 = crossover(parent1, parent2)
-            else:
-                child1, child2 = parent1[:], parent2[:]
+            #if random.random() < crossover_rate:
+            child1, child2 = crossover(parent1, parent2)
+            #else:
+                #child1, child2 = parent1[:], parent2[:]
 
             # Mutation
             child1 = mutation(child1, mutation_rate)
             child2 = mutation(child2, mutation_rate)
 
-            new_population.append(child1)
-            if len(new_population) < pop_size:
-                new_population.append(child2)
+            # new_population.append(child1)
+            # if len(new_population) < pop_size:
+            #     new_population.append(child2)
 
-            # worst_fit = fitness(population[-1])
+            worst_fit = fitness(population[-1])
 
-            # c1_fit = fitness(child1)
-            # c2_fit = fitness(child2)
+            c1_fit = fitness(child1)
+            c2_fit = fitness(child2)
 
-            # if c1_fit > worst_fit:
-            #     new_population.append(child1)
+            if c1_fit > worst_fit:
+                new_population.append(child1)
+            if c2_fit > worst_fit:
+                new_population.append(child1)
             # else:
             #     new_population.append(parent1[:])
 
